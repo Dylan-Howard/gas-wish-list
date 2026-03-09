@@ -29,13 +29,22 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const key = params.get('key');
+    console.log('URL Params:', Object.fromEntries(params.entries()));
+
+    // 1. Try to get key from injected GAS_CONFIG (most reliable in GAS)
+    // 2. Fall back to URL parameters
+    // 3. Fall back to local dev key
+    const gasConfig = window.GAS_CONFIG;
+    const key = gasConfig?.key || params.get('key');
+    const isAdminParam = gasConfig?.isAdmin || params.get('admin') === 'true';
+
     const isLocal = window.location.hostname === 'localhost';
     const isTest =
       typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
-    if (key && key.length === 32) {
+    if (key && (key.length === 32 || key.includes('REPLACE_WITH_YOUR'))) {
       setAuthKey(key);
+      setIsAdmin(!!isAdminParam);
       void loadData(key);
     } else if (isLocal && !isTest) {
       // Local development convenience
@@ -43,7 +52,9 @@ const App: React.FC = () => {
       setAuthKey(devKey);
       void loadData(devKey);
     } else {
-      setError('Invalid or missing authentication key.');
+      setError(
+        `Invalid or missing authentication key: ${key || 'none provided'}`,
+      );
       setLoading(false);
     }
   }, []);

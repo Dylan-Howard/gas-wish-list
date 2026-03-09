@@ -30,4 +30,11 @@ declare global {
       } & GasServerFunctions;
     };
   };
+
+  interface Window {
+    GAS_CONFIG?: {
+      key: string;
+      isAdmin: boolean;
+    };
+  }
 }

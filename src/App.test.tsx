@@ -32,6 +32,33 @@ describe('Wishlist App Root', () => {
     ).toBeInTheDocument();
   });
 
+  it('accepts the placeholder 34-character key and sets admin mode', async () => {
+    const mockKey = 'REPLACE_WITH_YOUR_32_CHAR_KEY_HERE';
+    window.history.pushState({}, '', `?key=${mockKey}&admin=true`);
+
+    const mockProducts = [
+      {
+        id: '1',
+        name: 'Test Item',
+        link: '',
+        imageUrl: '',
+        priority: 'High' as const,
+        tags: [],
+        purchased: false,
+      },
+    ];
+
+    vi.mocked(api.fetchProducts).mockResolvedValue(mockProducts);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('My Wishlist')).toBeInTheDocument();
+      expect(screen.getByText('Test Item')).toBeInTheDocument();
+      expect(screen.getByText('Edit')).toBeInTheDocument();
+    });
+  });
+
   it('loads and displays data when a valid 32-character key is provided', async () => {
     const mockKey = '12345678901234567890123456789012';
     window.history.pushState({}, '', `?key=${mockKey}`);

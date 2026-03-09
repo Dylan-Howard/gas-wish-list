@@ -2,8 +2,12 @@
 
 const CACHE_KEY = 'WISHLIST_DATA';
 const SHEET_NAME = 'Products';
-const AUTH_KEY = 'REPLACE_WITH_YOUR_32_CHAR_KEY_HERE';
-const ADMIN_KEY = 'REPLACE_WITH_YOUR_ADMIN_KEY_HERE';
+const AUTH_KEY =
+  PropertiesService.getScriptProperties().getProperty('AUTH_KEY') ||
+  'REPLACE_WITH_YOUR_32_CHAR_KEY_HERE';
+const ADMIN_KEY =
+  PropertiesService.getScriptProperties().getProperty('ADMIN_KEY') ||
+  'REPLACE_WITH_YOUR_ADMIN_KEY_HERE';
 
 function getCache() {
   return CacheService.getScriptCache();
@@ -112,7 +116,18 @@ export function doGet(e: any) {
     });
   }
 
-  return HtmlService.createHtmlOutputFromFile('index')
+  const output = HtmlService.createHtmlOutputFromFile('index');
+  const content = output.getContent();
+  const config = {
+    key: e.parameter.key,
+    isAdmin: isAdmin,
+  };
+  const injected = content.replace(
+    '</head>',
+    `<script>window.GAS_CONFIG = ${JSON.stringify(config)};</script></head>`,
+  );
+
+  return HtmlService.createHtmlOutput(injected)
     .setTitle('My Wishlist')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
