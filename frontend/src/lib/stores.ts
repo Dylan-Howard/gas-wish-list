@@ -11,6 +11,25 @@ export const items   = writable<WishItem[]>([]);
 export const loading = writable(false);
 export const error   = writable<string | null>(null);
 
+// ── Toasts ──────────────────────────────────────────────────────────────────────
+export interface ToastData {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  duration?: number;
+}
+
+export const toasts = writable<ToastData[]>([]);
+
+export function addToast(message: string, type: ToastData['type'] = 'info', duration = 4000) {
+  const id = Math.random().toString(36).substring(2, 9);
+  toasts.update((t) => [...t, { id, message, type, duration }]);
+}
+
+export function removeToast(id: string) {
+  toasts.update((t) => t.filter((toast) => toast.id !== id));
+}
+
 // ── View preferences ─────────────────────────────────────────────────────────────
 export const viewMode = writable<ViewMode>('grid');
 
@@ -99,7 +118,7 @@ export async function loadItems(): Promise<void> {
   if (result.success && result.data) {
     items.set(result.data);
   } else {
-    error.set(result.error ?? 'Failed to load items');
+    error.set(result.error ?? 'Failed to load items. Please check your connection.');
   }
 }
 
@@ -115,7 +134,9 @@ export async function markItemPurchased(id: string): Promise<void> {
     items.update((list) =>
       list.map((i) => (i.id === id ? { ...i, purchased: false } : i))
     );
-    error.set(result.error ?? 'Failed to mark item as purchased');
+    addToast(result.error ?? 'Failed to mark item as purchased', 'error');
+  } else {
+    addToast('Item marked as purchased', 'success');
   }
 }
 
@@ -131,9 +152,10 @@ export async function saveItem(item: WishItem): Promise<boolean> {
       }
       return [...list, item];
     });
+    addToast('Item saved successfully', 'success');
     return true;
   }
-  error.set(result.error ?? 'Failed to save item');
+  addToast(result.error ?? 'Failed to save item', 'error');
   return false;
 }
 
@@ -141,8 +163,9 @@ export async function deleteItem(id: string): Promise<boolean> {
   const result = await api.deleteItem(id);
   if (result.success) {
     items.update((list) => list.filter((i) => i.id !== id));
+    addToast('Item deleted', 'info');
     return true;
   }
-  error.set(result.error ?? 'Failed to delete item');
+  addToast(result.error ?? 'Failed to delete item', 'error');
   return false;
 }

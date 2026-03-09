@@ -3,6 +3,7 @@
   import ViewerPage from '$components/viewer/ViewerPage.svelte';
   import EditorPage from '$components/editor/EditorPage.svelte';
   import UnauthorizedPage from '$components/layout/UnauthorizedPage.svelte';
+  import ToastContainer from '$components/ui/ToastContainer.svelte';
   import { authMode } from '$lib/stores';
 </script>
 
@@ -31,6 +32,8 @@
     {/if}
   </main>
 {/if}
+
+<ToastContainer />
 
 <style>
   main {

@@ -66,11 +66,18 @@ async function gasGet<T>(action: string): Promise<ApiResponse<T>> {
     const url = new URL(config.gasUrl);
     url.searchParams.set('action', action);
     const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!res.ok) throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
     const json = await res.json();
     return json as ApiResponse<T>;
   } catch (err) {
-    return { success: false, error: (err as Error).message };
+    console.error('[API Error]', err);
+    let message = 'An unexpected error occurred';
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+      message = 'Network error. Please check your internet connection.';
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
+    return { success: false, error: message };
   }
 }
 
@@ -84,11 +91,18 @@ async function gasPost<T>(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, ...payload }),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!res.ok) throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
     const json = await res.json();
     return json as ApiResponse<T>;
   } catch (err) {
-    return { success: false, error: (err as Error).message };
+    console.error('[API Error]', err);
+    let message = 'An unexpected error occurred';
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+      message = 'Network error. Please check your internet connection.';
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
+    return { success: false, error: message };
   }
 }
 

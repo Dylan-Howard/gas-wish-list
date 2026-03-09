@@ -6,6 +6,7 @@
   import Dialog from '$components/ui/Dialog.svelte';
   import Button from '$components/ui/Button.svelte';
   import Spinner from '$components/ui/Spinner.svelte';
+  import ErrorMessage from '$components/ui/ErrorMessage.svelte';
   import { items, loading, error, loadItems, saveItem, deleteItem } from '$lib/stores';
   import type { WishItem } from '$lib/types';
 
@@ -14,7 +15,6 @@
   let deleteTarget: WishItem | null = null;
   let formOpen   = false;
   let deleteOpen = false;
-  let saveError  = '';
 
   onMount(() => {
     loadItems();
@@ -23,13 +23,11 @@
   function openNew() {
     editTarget = null;
     formOpen   = true;
-    saveError  = '';
   }
 
   function openEdit(item: WishItem) {
     editTarget = item;
     formOpen   = true;
-    saveError  = '';
   }
 
   function openDelete(item: WishItem) {
@@ -42,8 +40,6 @@
     if (ok) {
       formOpen   = false;
       editTarget = null;
-    } else {
-      saveError = 'Failed to save. Please try again.';
     }
   }
 
@@ -79,10 +75,12 @@
     </div>
 
   {:else if $error}
-    <div class="state state--error">
-      <p>{$error}</p>
-      <button class="retry" on:click={loadItems}>Retry</button>
-    </div>
+    <ErrorMessage
+      title="Unable to load items"
+      message={$error}
+      showRetry={true}
+      on:retry={loadItems}
+    />
 
   {:else if sortedItems.length === 0}
     <div class="empty">
@@ -120,9 +118,6 @@
   maxWidth="560px"
   on:close={() => (formOpen = false)}
 >
-  {#if saveError}
-    <p class="save-error">{saveError}</p>
-  {/if}
   <ItemForm
     item={editTarget}
     on:save={onSave}
@@ -199,19 +194,6 @@
     text-align: center;
   }
 
-  .state--error { color: var(--color-danger); }
-
-  .retry {
-    padding: 7px 16px;
-    font-size: 13px;
-    font-family: var(--font-body);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-
   .empty {
     display: flex;
     flex-direction: column;
@@ -231,16 +213,6 @@
     font-size: 14px;
     color: var(--color-text-tertiary);
     margin-bottom: 8px;
-  }
-
-  .save-error {
-    font-size: 13px;
-    color: var(--color-danger);
-    background: var(--color-danger-light);
-    border: 1px solid #fca5a5;
-    border-radius: var(--radius-md);
-    padding: 10px 14px;
-    margin-bottom: 4px;
   }
 
   @media (max-width: 700px) {

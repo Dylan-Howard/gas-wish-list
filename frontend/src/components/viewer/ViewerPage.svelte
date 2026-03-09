@@ -5,6 +5,7 @@
   import ViewerToolbar from './ViewerToolbar.svelte';
   import PurchaseDialog from './PurchaseDialog.svelte';
   import Spinner from '$components/ui/Spinner.svelte';
+  import ErrorMessage from '$components/ui/ErrorMessage.svelte';
   import { filteredItems, allTags, items, loading, error, viewMode, loadItems, markItemPurchased } from '$lib/stores';
   import type { WishItem } from '$lib/types';
 
@@ -49,14 +50,12 @@
     </div>
 
   {:else if $error}
-    <div class="state state--error">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
-        <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      <p>{$error}</p>
-      <button class="retry" on:click={loadItems}>Try again</button>
-    </div>
+    <ErrorMessage
+      title="Unable to load items"
+      message={$error}
+      showRetry={true}
+      on:retry={loadItems}
+    />
 
   {:else if $filteredItems.length === 0}
     <div class="state">
@@ -132,8 +131,6 @@
     text-align: center;
   }
 
-  .state--error { color: var(--color-danger); }
-
   .state p { font-size: 14px; }
 
   .state-title {
@@ -144,25 +141,6 @@
 
   .state-sub {
     color: var(--color-text-tertiary) !important;
-  }
-
-  .retry {
-    margin-top: 4px;
-    padding: 7px 16px;
-    font-size: 13px;
-    font-family: var(--font-body);
-    font-weight: 500;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    color: var(--color-text-primary);
-    transition: all var(--transition-fast);
-  }
-
-  .retry:hover {
-    background: var(--color-bg);
-    border-color: var(--color-border-strong);
   }
 
   @keyframes fade-in {
