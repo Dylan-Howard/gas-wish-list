@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import WishCard from './WishCard.svelte';
   import WishRow from './WishRow.svelte';
+  import WishCardSkeleton from './WishCardSkeleton.svelte';
+  import WishRowSkeleton from './WishRowSkeleton.svelte';
   import ViewerToolbar from './ViewerToolbar.svelte';
   import PurchaseDialog from './PurchaseDialog.svelte';
-  import Spinner from '$components/ui/Spinner.svelte';
   import ErrorMessage from '$components/ui/ErrorMessage.svelte';
   import { filteredItems, allTags, items, loading, error, viewMode, loadItems, markItemPurchased } from '$lib/stores';
   import type { WishItem } from '$lib/types';
@@ -13,10 +13,7 @@
 
   let purchaseTarget: WishItem | null = null;
   let dialogOpen = false;
-
-  onMount(() => {
-    loadItems();
-  });
+  const skeletonItems = Array.from({ length: 6 });
 
   function onPurchase(item: WishItem) {
     purchaseTarget = item;
@@ -43,13 +40,26 @@
   />
 
   <!-- States -->
-  {#if $loading}
-    <div class="state">
-      <Spinner size="lg" />
-      <p>Loading wish list…</p>
-    </div>
+  {#if $loading && $items.length === 0}
+    {#if $viewMode === 'grid'}
+      <ul class="grid grid--skeleton" aria-hidden="true">
+        {#each skeletonItems as _}
+          <li>
+            <WishCardSkeleton />
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <ul class="list list--skeleton" aria-hidden="true">
+        {#each skeletonItems as _}
+          <li>
+            <WishRowSkeleton />
+          </li>
+        {/each}
+      </ul>
+    {/if}
 
-  {:else if $error}
+  {:else if $error && $items.length === 0}
     <ErrorMessage
       title="Unable to load items"
       message={$error}

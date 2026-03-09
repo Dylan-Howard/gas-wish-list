@@ -19,7 +19,7 @@
 <svelte:window on:keydown={onKeydown} />
 
 {#if open}
-  <div class="backdrop" on:click={onBackdropClick} on:keydown={onBackdropClick} role="presentation">
+  <div class="backdrop" on:click={onBackdropClick} role="presentation">
     <div
       class="dialog"
       style="max-width: {maxWidth};"

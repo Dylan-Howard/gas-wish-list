@@ -1,34 +1,15 @@
 import { writable, derived } from 'svelte/store';
-import type { WishItem, SortConfig, FilterConfig, ViewMode, AuthMode } from './types';
-import { getAuthMode } from './auth';
+import type { WishItem, SortConfig, FilterConfig, ViewMode, AuthMode, Toast } from './types';
 import { api } from './api';
 
 // ── Auth ────────────────────────────────────────────────────────────────────────
-export const authMode = writable<AuthMode>(getAuthMode());
+/** Initial mode is unauthorized until backend verifies the token. */
+export const authMode = writable<AuthMode>('unauthorized');
 
 // ── Remote data ─────────────────────────────────────────────────────────────────
 export const items   = writable<WishItem[]>([]);
 export const loading = writable(false);
 export const error   = writable<string | null>(null);
-
-// ── Toasts ──────────────────────────────────────────────────────────────────────
-export interface ToastData {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-  duration?: number;
-}
-
-export const toasts = writable<ToastData[]>([]);
-
-export function addToast(message: string, type: ToastData['type'] = 'info', duration = 4000) {
-  const id = Math.random().toString(36).substring(2, 9);
-  toasts.update((t) => [...t, { id, message, type, duration }]);
-}
-
-export function removeToast(id: string) {
-  toasts.update((t) => t.filter((toast) => toast.id !== id));
-}
 
 // ── View preferences ─────────────────────────────────────────────────────────────
 export const viewMode = writable<ViewMode>('grid');
@@ -43,6 +24,18 @@ export const sortConfig = writable<SortConfig>({
   field: 'sortOrder',
   direction: 'asc',
 });
+
+// ── Toasts ──────────────────────────────────────────────────────────────────────
+export const toasts = writable<Toast[]>([]);
+
+export function addToast(message: string, type: Toast['type'] = 'info', duration = 3000): void {
+  const id = Math.random().toString(36).substring(2, 9);
+  toasts.update((all) => [...all, { id, message, type, duration }]);
+}
+
+export function removeToast(id: string): void {
+  toasts.update((all) => all.filter((t) => t.id !== id));
+}
 
 // ── Derived stores ───────────────────────────────────────────────────────────────
 
@@ -90,8 +83,10 @@ export const filteredItems = derived(
         aVal = a.price ?? Infinity;
         bVal = b.price ?? Infinity;
       } else {
-        aVal = (a[$sort.field] as string | number) ?? '';
-        bVal = (b[$sort.field] as string | number) ?? '';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        aVal = (a as any)[$sort.field] ?? '';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        bVal = (b as any)[$sort.field] ?? '';
       }
 
       if (typeof aVal === 'string' && typeof bVal === 'string') {
@@ -115,57 +110,78 @@ export async function loadItems(): Promise<void> {
   const result = await api.getItems();
   loading.set(false);
 
-  if (result.success && result.data) {
-    items.set(result.data);
+  if (result.success) {
+    if (result.mode) {
+      authMode.set(result.mode);
+    }
+    if (result.data) {
+      items.set(result.data);
+    }
   } else {
-    error.set(result.error ?? 'Failed to load items. Please check your connection.');
+    const msg = result.error ?? 'Failed to load items';
+    error.set(msg);
+    if (msg === 'Unauthorized') {
+      authMode.set('unauthorized');
+    }
   }
 }
 
 export async function markItemPurchased(id: string): Promise<void> {
-  // Optimistic update
+  let previous: WishItem | null = null;
   items.update((list) =>
-    list.map((i) => (i.id === id ? { ...i, purchased: true } : i))
+    list.map((i) => {
+      if (i.id !== id) return i;
+      previous = i;
+      return { ...i, purchased: true };
+    })
   );
 
   const result = await api.markPurchased(id, true);
   if (!result.success) {
     // Revert on failure
-    items.update((list) =>
-      list.map((i) => (i.id === id ? { ...i, purchased: false } : i))
-    );
+    if (previous) {
+      items.update((list) =>
+        list.map((i) => (i.id === id ? previous as WishItem : i))
+      );
+    }
     addToast(result.error ?? 'Failed to mark item as purchased', 'error');
-  } else {
-    addToast('Item marked as purchased', 'success');
   }
 }
 
 export async function saveItem(item: WishItem): Promise<boolean> {
+  let previous: WishItem[] = [];
+  items.update((list) => {
+    previous = [...list];
+    const idx = list.findIndex((i) => i.id === item.id);
+    if (idx >= 0) {
+      const updated = [...list];
+      updated[idx] = item;
+      return updated;
+    }
+    return [...list, item];
+  });
+
   const result = await api.saveItem(item);
   if (result.success) {
-    items.update((list) => {
-      const idx = list.findIndex((i) => i.id === item.id);
-      if (idx >= 0) {
-        const updated = [...list];
-        updated[idx] = item;
-        return updated;
-      }
-      return [...list, item];
-    });
-    addToast('Item saved successfully', 'success');
     return true;
   }
+  items.set(previous);
   addToast(result.error ?? 'Failed to save item', 'error');
   return false;
 }
 
 export async function deleteItem(id: string): Promise<boolean> {
+  let previous: WishItem[] = [];
+  items.update((list) => {
+    previous = [...list];
+    return list.filter((i) => i.id !== id);
+  });
+
   const result = await api.deleteItem(id);
   if (result.success) {
-    items.update((list) => list.filter((i) => i.id !== id));
-    addToast('Item deleted', 'info');
     return true;
   }
+  items.set(previous);
   addToast(result.error ?? 'Failed to delete item', 'error');
   return false;
 }

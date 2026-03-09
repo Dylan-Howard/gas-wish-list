@@ -9,7 +9,8 @@
     "build:bookmarklet": "node ../bookmarklet/build.mjs",
     "preview":           "vite preview",
     "type-check":        "svelte-check --tsconfig ./tsconfig.json",
-    "deploy":            "npm run build && echo 'Ready to deploy dist/ to GitHub Pages!'"
+    "deploy":            "npm run build && echo 'Ready to deploy dist/ to GitHub Pages!'",
+    "test":              "vitest run"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.0",
@@ -19,6 +20,7 @@
     "tslib":                        "^2.6.3",
     "typescript":                   "^5.4.5",
     "vite":                         "^5.2.11",
-    "vite-plugin-singlefile":       "^2.0.2"
+    "vite-plugin-singlefile":       "^2.0.2",
+    "vitest":                       "^3.0.0"
   }
 }

@@ -26,6 +26,8 @@
   --color-danger-light:    #FEE2E2;
   --color-success:         #16A34A;
   --color-success-light:   #DCFCE7;
+  --color-skeleton:        #EFEFED;
+  --color-skeleton-hi:     #F7F7F4;
 
   /* Typography */
   --font-display: 'Playfair Display', Georgia, serif;
@@ -87,3 +89,27 @@ img { max-width: 100%; height: auto; display: block; }
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-tertiary); }
+
+/* =============================================
+   Skeletons
+   ============================================= */
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--color-skeleton) 0%,
+    var(--color-skeleton-hi) 50%,
+    var(--color-skeleton) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}

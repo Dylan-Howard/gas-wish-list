@@ -1,4 +1,5 @@
 import { config } from './config';
+import { getActiveToken } from './auth';
 import type { WishItem, ApiResponse } from './types';
 
 // ── Dev mock data (used when VITE_GAS_URL is not set) ──────────────────────────
@@ -65,6 +66,8 @@ async function gasGet<T>(action: string): Promise<ApiResponse<T>> {
   try {
     const url = new URL(config.gasUrl);
     url.searchParams.set('action', action);
+    url.searchParams.set('token', getActiveToken());
+
     const res = await fetch(url.toString());
     if (!res.ok) throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
     const json = await res.json();
@@ -88,8 +91,12 @@ async function gasPost<T>(
   try {
     const res = await fetch(config.gasUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...payload }),
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action,
+        token: getActiveToken(),
+        ...payload
+      }),
     });
     if (!res.ok) throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
     const json = await res.json();

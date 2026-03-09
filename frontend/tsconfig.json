@@ -11,10 +11,9 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": ["vite/client"],
-    "baseUrl": ".",
     "paths": {
-      "$lib/*": ["src/lib/*"],
-      "$components/*": ["src/components/*"]
+      "$lib/*": ["./src/lib/*"],
+      "$components/*": ["./src/components/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte"],

@@ -9,12 +9,14 @@
     "compile": "tsc",
     "fix": "gts fix",
     "build": "mkdir -p dist && tsc src/Code.ts --outDir dist --target ESNext --module esnext --moduleResolution node --skipLibCheck true && sed -i '' 's/export //g' dist/Code.js && cp appsscript.json dist/",
-    "deploy": "npm run build && clasp push"
+    "deploy": "npm run build && clasp push",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@google/clasp": "^2.5.0",
     "@types/google-apps-script": "^1.0.83",
     "gts": "^7.0.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
   }
 }

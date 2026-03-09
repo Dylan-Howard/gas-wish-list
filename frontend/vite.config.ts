@@ -8,7 +8,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [svelte(), viteSingleFile()],
-  envDir: '../', // Look for .env in the root
+  envDir: '.', // Explicitly look in this directory for .env
   resolve: {
     alias: {
       $lib: path.resolve(__dirname, './src/lib'),

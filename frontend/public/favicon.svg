@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B4332"/>
+      <stop offset="100%" stop-color="#2D6A4F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded background -->
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+
+  <!--
+    5-point star, center (16, 17), outer r=9.5, inner r=4.0
+    Rotated so top point faces up (-90°)
+    Point angles: -90, -18, 54, 126, 198 (outer)
+                  -54, 18, 90, 162, 234 (inner)
+  -->
+  <polygon
+    points="
+      16.00,7.50
+      18.08,12.94
+      23.94,12.94
+      19.23,16.40
+      21.06,22.00
+      16.00,18.70
+      10.94,22.00
+      12.77,16.40
+      8.06,12.94
+      13.92,12.94
+    "
+    fill="#D8F3DC"
+  />
+</svg>

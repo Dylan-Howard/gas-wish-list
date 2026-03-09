@@ -1,13 +1,21 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Header from '$components/layout/Header.svelte';
   import ViewerPage from '$components/viewer/ViewerPage.svelte';
   import EditorPage from '$components/editor/EditorPage.svelte';
   import UnauthorizedPage from '$components/layout/UnauthorizedPage.svelte';
   import ToastContainer from '$components/ui/ToastContainer.svelte';
-  import { authMode } from '$lib/stores';
+  import { authMode, loadItems } from '$lib/stores';
+  import { getActiveToken } from '$lib/auth';
+
+  onMount(() => {
+    loadItems();
+  });
+
+  const hasToken = Boolean(getActiveToken());
 </script>
 
-{#if $authMode === 'unauthorized'}
+{#if !hasToken}
   <UnauthorizedPage />
 
 {:else}

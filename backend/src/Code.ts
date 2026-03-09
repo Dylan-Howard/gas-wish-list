@@ -5,7 +5,7 @@
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface WishItem {
+export interface WishItem {
   id: string;
   title: string;
   description: string;
@@ -18,10 +18,13 @@ interface WishItem {
   sortOrder: number;
 }
 
-interface ApiResponse<T = unknown> {
+export type AuthMode = 'viewer' | 'editor' | 'unauthorized';
+
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+  mode?: AuthMode;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -50,7 +53,7 @@ const NUM_COLS = 10 as const;
 
 // ── Response helpers ──────────────────────────────────────────────────────────
 
-function jsonResponse<T>(
+export function jsonResponse<T>(
   data: ApiResponse<T>
 ): GoogleAppsScript.Content.TextOutput {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(
@@ -58,47 +61,64 @@ function jsonResponse<T>(
   );
 }
 
-function ok<T>(data?: T): GoogleAppsScript.Content.TextOutput {
-  return jsonResponse<T>({ success: true, ...(data !== undefined ? { data } : {}) });
+export function ok<T>(data?: T, mode?: AuthMode): GoogleAppsScript.Content.TextOutput {
+  return jsonResponse<T>({ 
+    success: true, 
+    ...(data !== undefined ? { data } : {}),
+    ...(mode ? { mode } : {})
+  });
 }
 
-function err(message: string): GoogleAppsScript.Content.TextOutput {
+export function err(message: string): GoogleAppsScript.Content.TextOutput {
   return jsonResponse({ success: false, error: message });
 }
 
 // ── Token validation ──────────────────────────────────────────────────────────
 
-function getScriptProp(key: string): string {
+export function getScriptProp(key: string): string {
   return PropertiesService.getScriptProperties().getProperty(key) ?? '';
-}
-
-function isValidViewToken(token: string): boolean {
-  const viewToken = getScriptProp(PROP_VIEW_TOKEN);
-  const editToken = getScriptProp(PROP_EDIT_TOKEN);
-  if (!viewToken && !editToken) return true;
-  if (editToken && token === editToken) return true;
-  return !viewToken || token === viewToken;
-}
-
-function isValidEditToken(token: string): boolean {
-  const editToken = getScriptProp(PROP_EDIT_TOKEN);
-  if (!editToken) return true;
-  return token === editToken;
 }
 
 // ── HTTP handlers ─────────────────────────────────────────────────────────────
 
+type PostBody = {
+  action?: string;
+  token?: string;
+  editToken?: string;
+  data?: WishItem;
+  product?: WishItem;
+  id?: string;
+  purchased?: boolean;
+  email?: string;
+  url?: string;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function doGet(e: any): GoogleAppsScript.Content.TextOutput {
+export function doGet(e: any): GoogleAppsScript.Content.TextOutput {
   try {
     const action = e.parameter.action ?? 'getItems';
     const token  = e.parameter.token  ?? e.parameter.viewToken ?? e.parameter.editToken ?? '';
 
+    if (!token) {
+      return err('Unauthorized');
+    }
+
+    const editToken = getScriptProp(PROP_EDIT_TOKEN);
+    const viewToken = getScriptProp(PROP_VIEW_TOKEN);
+
     if (action === 'getItems' || action === 'getData') {
-      if (!isValidViewToken(token)) {
-        return err('Unauthorized');
+      // 1. Check Editor
+      if (editToken && token === editToken) {
+        return ok<WishItem[]>(getItems(), 'editor');
       }
-      return ok<WishItem[]>(getItems());
+      
+      // 2. Check Viewer
+      if (!viewToken || token === viewToken) {
+        return ok<WishItem[]>(getItems(), 'viewer');
+      }
+
+      // 3. Invalid token: Return obscured empty list
+      return ok<WishItem[]>([], 'viewer');
     }
 
     return err(`Unknown action: ${action}`);
@@ -108,15 +128,33 @@ function doGet(e: any): GoogleAppsScript.Content.TextOutput {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function doPost(
+export function doPost(
   e: GoogleAppsScript.Events.DoPost
 ): GoogleAppsScript.Content.TextOutput {
   try {
-    const body = JSON.parse(e.postData.contents);
+    const rawBody = e.postData?.contents ?? '';
+    let parsed: Record<string, unknown> = {};
+    if (rawBody) {
+      try {
+        parsed = JSON.parse(rawBody);
+      } catch {
+        // Fallback for x-www-form-urlencoded or plain text key=value
+        parsed = rawBody.split('&').reduce<Record<string, unknown>>((acc, pair) => {
+          const [rawKey, rawValue] = pair.split('=');
+          if (!rawKey) return acc;
+          const key = decodeURIComponent(rawKey.replace(/\+/g, ' '));
+          const value = decodeURIComponent((rawValue ?? '').replace(/\+/g, ' '));
+          acc[key] = value;
+          return acc;
+        }, {});
+      }
+    }
+    const body = parsed as PostBody;
     const action = body.action;
     const token = body.token ?? body.editToken ?? '';
 
-    if (!isValidEditToken(token)) {
+    const editToken = getScriptProp(PROP_EDIT_TOKEN);
+    if (editToken && token !== editToken) {
       return err('Unauthorized');
     }
 
@@ -129,19 +167,24 @@ function doPost(
         return ok();
       }
       case 'deleteItem': {
-        if (!body.id) return err('Missing id');
-        deleteItem(body.id);
+        const id = body.id;
+        if (!id) return err('Missing id');
+        deleteItem(id);
         return ok();
       }
       case 'markPurchased':
       case 'MARK_PURCHASED': {
-        const id = body.id ?? (body.product ? body.product.id : null);
+        const id = body.id ?? body.product?.id ?? null;
         if (!id) return err('Missing id');
-        markPurchased(id, body.purchased ?? true);
+        const purchased = typeof body.purchased === 'boolean' ? body.purchased : true;
+        markPurchased(id, purchased);
         return ok();
       }
       case 'SEND_INVITE': {
-        sendGmailInvite(body.email, body.url);
+        const email = body.email;
+        const url = body.url;
+        if (!email || !url) return err('Missing email or url');
+        sendGmailInvite(email, url);
         return ok();
       }
       default:
@@ -154,7 +197,7 @@ function doPost(
 
 // ── Sheet helpers ─────────────────────────────────────────────────────────────
 
-function getSheet(): GoogleAppsScript.Spreadsheet.Sheet {
+export function getSheet(): GoogleAppsScript.Spreadsheet.Sheet {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
 
@@ -170,7 +213,7 @@ function getSheet(): GoogleAppsScript.Spreadsheet.Sheet {
   return sheet;
 }
 
-function rowToItem(row: any[]): WishItem {
+export function rowToItem(row: any[]): WishItem {
   return {
     id:          String(row[COL.id]          ?? ''),
     title:       String(row[COL.title]       ?? ''),
@@ -185,7 +228,7 @@ function rowToItem(row: any[]): WishItem {
   };
 }
 
-function itemToRow(item: WishItem): any[] {
+export function itemToRow(item: WishItem): any[] {
   return [
     item.id,
     item.title,
@@ -202,16 +245,34 @@ function itemToRow(item: WishItem): any[] {
 
 // ── CRUD ─────────────────────────────────────────────────────────────────────
 
-function getItems(): WishItem[] {
+export function getItems(): WishItem[] {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get(CACHE_KEY);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch (e) {
+      // ignore parse error and fetch from sheet
+    }
+  }
+
   const sheet = getSheet();
   const data  = sheet.getDataRange().getValues();
-  return data
+  const items = data
     .slice(1)
     .filter((row) => !!row[COL.id])
     .map(rowToItem);
+
+  try {
+    cache.put(CACHE_KEY, JSON.stringify(items), 21600); // 6 hours
+  } catch (e) {
+    // ignore cache write error (e.g. data too large)
+  }
+
+  return items;
 }
 
-function saveItem(item: WishItem): void {
+export function saveItem(item: WishItem): void {
   const sheet = getSheet();
   const data  = sheet.getDataRange().getValues();
   const rowIdx = data.findIndex(r => String(r[COL.id]) === String(item.id));
@@ -249,7 +310,10 @@ function markPurchased(id: string, purchased: boolean): void {
   CacheService.getScriptCache().remove(CACHE_KEY);
 }
 
-function sendGmailInvite(email: string, url: string): void {
+export function sendGmailInvite(email: string, url: string): void {
+  // Simple validation
+  if (!email.includes('@')) throw new Error('Invalid email format');
+
   const subject = 'Check out my Wishlist!';
   const htmlBody = `
     <div style="font-family: sans-serif; color: #333;">

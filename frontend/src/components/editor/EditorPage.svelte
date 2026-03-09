@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import EditorRow from './EditorRow.svelte';
+  import EditorRowSkeleton from './EditorRowSkeleton.svelte';
   import ItemForm from './ItemForm.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import Dialog from '$components/ui/Dialog.svelte';
   import Button from '$components/ui/Button.svelte';
-  import Spinner from '$components/ui/Spinner.svelte';
   import ErrorMessage from '$components/ui/ErrorMessage.svelte';
   import { items, loading, error, loadItems, saveItem, deleteItem } from '$lib/stores';
   import type { WishItem } from '$lib/types';
@@ -15,10 +14,7 @@
   let deleteTarget: WishItem | null = null;
   let formOpen   = false;
   let deleteOpen = false;
-
-  onMount(() => {
-    loadItems();
-  });
+  const skeletonRows = Array.from({ length: 6 });
 
   function openNew() {
     editTarget = null;
@@ -68,13 +64,22 @@
   </div>
 
   <!-- States -->
-  {#if $loading}
-    <div class="state">
-      <Spinner size="lg" />
-      <p>Loading…</p>
+  {#if $loading && $items.length === 0}
+    <div class="col-headers" aria-hidden="true">
+      <span></span>
+      <span>Item</span>
+      <span class="align-right">Price</span>
+      <span>Status</span>
+      <span></span>
     </div>
 
-  {:else if $error}
+    <ul class="item-list" aria-hidden="true">
+      {#each skeletonRows as _}
+        <EditorRowSkeleton />
+      {/each}
+    </ul>
+
+  {:else if $error && $items.length === 0}
     <ErrorMessage
       title="Unable to load items"
       message={$error}

@@ -36,6 +36,24 @@ A clean, minimal wish list app. Viewers browse items, guests mark things as purc
 
 ---
 
+## Production Deployment (Quick Steps)
+
+### 1. Backend (Google Apps Script)
+1. **Prepare:** Run `npm install` in `backend/`.
+2. **Push:** Run `npm run deploy` (requires `clasp login` and a valid `.clasp.json`).
+3. **Configure:** In the Apps Script editor, go to **Project Settings** → **Script Properties** and add:
+   - `VIEW_TOKEN`: Your secret viewer token.
+   - `EDIT_TOKEN`: Your secret editor token.
+4. **Deploy:** Click **Deploy** → **New Deployment** (Web App, Me, Anyone). Copy the URL.
+
+### 2. Frontend (GitHub Pages)
+1. **Prepare:** Run `npm install` in `frontend/`.
+2. **Build:** Ensure `.env` contains `VITE_GAS_URL` (the Apps Script URL), `VITE_VIEW_TOKEN`, and `VITE_EDIT_TOKEN`.
+3. **Generate:** Run `npm run build`. This creates a `dist/` folder.
+4. **Publish:** Deploy the contents of `frontend/dist/` to your hosting provider (e.g., GitHub Pages).
+
+---
+
 ## Access URLs
 
 | Role | URL |

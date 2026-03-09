@@ -29,6 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: frontend
 
       - name: Build
         env:
@@ -38,11 +39,12 @@ jobs:
           VITE_APP_NAME:      ${{ vars.VITE_APP_NAME }}
           VITE_APP_SUBTITLE:  ${{ vars.VITE_APP_SUBTITLE }}
         run: npm run build
+        working-directory: frontend
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: frontend/dist
 
   deploy:
     needs: build

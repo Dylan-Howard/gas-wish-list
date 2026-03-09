@@ -28,8 +28,16 @@ export interface FilterConfig {
   search: string;
 }
 
+export interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  duration?: number;
+}
+
 export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   success: boolean;
+  mode?: AuthMode;
 }
