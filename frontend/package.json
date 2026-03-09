@@ -1,14 +1,15 @@
 {
-  "name": "wishlist-app",
+  "name": "wishlist-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev":               "vite",
     "build":             "vite build",
-    "build:bookmarklet": "node bookmarklet/build.mjs",
+    "build:bookmarklet": "node ../bookmarklet/build.mjs",
     "preview":           "vite preview",
-    "type-check":        "svelte-check --tsconfig ./tsconfig.json"
+    "type-check":        "svelte-check --tsconfig ./tsconfig.json",
+    "deploy":            "npm run build && echo 'Ready to deploy dist/ to GitHub Pages!'"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.0",

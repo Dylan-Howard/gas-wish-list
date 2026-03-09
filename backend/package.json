@@ -1,5 +1,5 @@
 {
-  "name": "wishlist-app",
+  "name": "wishlist-backend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -8,36 +8,13 @@
     "clean": "gts clean",
     "compile": "tsc",
     "fix": "gts fix",
-    "dev": "vite",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "build": "vite build && tsc src/Code.ts --outDir dist --target ESNext --module esnext --moduleResolution node --skipLibCheck true && sed -i '' 's/export //g' dist/Code.js && cp appsscript.json dist/",
-    "deploy": "npm run build && clasp push",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.8",
-    "@mui/material": "^7.3.8",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "build": "mkdir -p dist && tsc src/Code.ts --outDir dist --target ESNext --module esnext --moduleResolution node --skipLibCheck true && sed -i '' 's/export //g' dist/Code.js && cp appsscript.json dist/",
+    "deploy": "npm run build && clasp push"
   },
   "devDependencies": {
     "@google/clasp": "^2.5.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/google-apps-script": "^2.0.8",
-    "@types/node": "^22.7.5",
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@vitejs/plugin-react": "^5.1.4",
+    "@types/google-apps-script": "^1.0.83",
     "gts": "^7.0.0",
-    "jsdom": "^28.1.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vite-plugin-singlefile": "^2.3.0",
-    "vitest": "^4.0.18"
+    "typescript": "^5.4.5"
   }
 }
